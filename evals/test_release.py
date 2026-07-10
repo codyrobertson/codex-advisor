@@ -27,6 +27,7 @@ class RepositoryShapeTests(unittest.TestCase):
             ROOT / "evals" / "evaluate.py",
             ROOT / "evals" / "fake-bin" / "codex",
             ROOT / "evals" / "baselines" / "live-smoke.json",
+            ROOT / "evals" / "baselines" / "live-qualification.json",
             SKILL / "SKILL.md",
             SKILL / "scripts" / "run-role.sh",
             SKILL / "scripts" / "worktree-state.py",
@@ -90,6 +91,17 @@ class RepositoryShapeTests(unittest.TestCase):
             {result["case_id"] for result in baseline["results"]},
         )
         self.assertTrue(all(result["passed"] and result["score"] == 100 for result in baseline["results"]))
+        serialized = json.dumps(baseline)
+        self.assertNotIn("nonce", serialized)
+        self.assertNotIn("stderr", serialized)
+
+    def test_checked_in_live_qualification_meets_release_gate(self) -> None:
+        baseline = json.loads((ROOT / "evals" / "baselines" / "live-qualification.json").read_text())
+        self.assertEqual(16, baseline["summary"]["case_count"])
+        self.assertGreaterEqual(baseline["summary"]["pass_rate"], 0.9)
+        self.assertEqual(0, baseline["summary"]["critical_failures"])
+        self.assertRegex(baseline["source_commit"], r"\A[0-9a-f]{40}\Z")
+        self.assertEqual(16, len(baseline["results"]))
         serialized = json.dumps(baseline)
         self.assertNotIn("nonce", serialized)
         self.assertNotIn("stderr", serialized)

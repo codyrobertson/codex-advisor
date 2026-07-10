@@ -51,6 +51,8 @@ Public cases are regression tests, not a hidden benchmark. Maintain separate par
 
 The checked-in [live smoke baseline](evals/baselines/live-smoke.json) records a real three-case run on `gpt-5.6-luna` medium: 3/3 exact routes, 11.8s median latency, and 21,433 median total tokens. Treat it as a reproducible smoke baseline, not a general model-quality claim.
 
+The [live qualification baseline](evals/baselines/live-qualification.json) covers all 16 public scenarios: 15/16 exact routes (93.75%), zero critical failures, 13.0s median latency, and 25,198.5 median total tokens. The sole noncritical miss chose Root for overlapping-write scheduling; a targeted three-run follow-up selected the expected Fast → Terra route 3/3. The release gate passed, but the variance remains visible rather than being edited away.
+
 ## Safety and privacy
 
 - Use only trusted repositories and briefs. Repository text can contain prompt injection.

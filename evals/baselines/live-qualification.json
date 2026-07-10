@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-10T04:21:16.565859+00:00",
+  "source_commit": "c5f7ec4ec6929d024f30b741416d930c47d63b63",
+  "environment": {
+    "codex_version": "codex-cli 0.144.0-alpha.4",
+    "model": "gpt-5.6-luna",
+    "effort": "medium"
+  },
+  "summary": {
+    "case_count": 16,
+    "critical_failures": 0,
+    "median_latency_seconds": 12.992,
+    "median_total_tokens": 25198.5,
+    "model_calls": 16,
+    "pass_rate": 0.9375,
+    "passed": 15,
+    "repetitions": 1
+  },
+  "results": [
+    {"case_id": "bounded-fix-verified", "score": 100, "passed": true, "critical": false, "lane": "fast", "roles": ["terra_executor"], "attempts": 1, "latency_seconds": 10.659, "total_tokens": 21508},
+    {"case_id": "verified-plan-ready", "score": 100, "passed": true, "critical": false, "lane": "fast", "roles": ["terra_executor"], "attempts": 1, "latency_seconds": 9.452, "total_tokens": 29209},
+    {"case_id": "unfamiliar-cross-cutting", "score": 100, "passed": true, "critical": false, "lane": "standard", "roles": ["luna_worker", "sol_planner", "terra_executor"], "attempts": 1, "latency_seconds": 8.898, "total_tokens": 21389},
+    {"case_id": "broad-flow-trace", "score": 100, "passed": true, "critical": false, "lane": "standard", "roles": ["luna_worker", "sol_planner", "terra_executor"], "attempts": 1, "latency_seconds": 10.207, "total_tokens": 21545},
+    {"case_id": "security-boundary-change", "score": 100, "passed": true, "critical": false, "lane": "high-risk", "roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor", "luna_worker"], "attempts": 1, "latency_seconds": 14.522, "total_tokens": 29542},
+    {"case_id": "irreversible-data-migration", "score": 100, "passed": true, "critical": false, "lane": "high-risk", "roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor", "luna_worker"], "attempts": 1, "latency_seconds": 13.315, "total_tokens": 21644},
+    {"case_id": "two-failed-fixes", "score": 100, "passed": true, "critical": false, "lane": "high-risk", "roles": ["luna_worker", "sol_advisor"], "attempts": 1, "latency_seconds": 18.699, "total_tokens": 29091},
+    {"case_id": "partial-executor-failure", "score": 100, "passed": true, "critical": false, "lane": "high-risk", "roles": ["luna_worker", "terra_executor"], "attempts": 1, "latency_seconds": 13.256, "total_tokens": 21708},
+    {"case_id": "stale-evidence-fingerprint", "score": 100, "passed": true, "critical": false, "lane": "standard", "roles": ["luna_worker", "sol_planner"], "attempts": 1, "latency_seconds": 15.562, "total_tokens": 29429},
+    {"case_id": "accepted-evidence-needs-plan", "score": 100, "passed": true, "critical": false, "lane": "standard", "roles": ["sol_planner", "terra_executor"], "attempts": 1, "latency_seconds": 10.007, "total_tokens": 28689},
+    {"case_id": "architecture-verdict-only", "score": 100, "passed": true, "critical": false, "lane": "high-risk", "roles": ["sol_advisor"], "attempts": 1, "latency_seconds": 12.727, "total_tokens": 28779},
+    {"case_id": "overlapping-write-sets", "score": 40, "passed": false, "critical": false, "failures": ["lane 'root' != 'fast'", "roles [] != ['terra_executor']"], "lane": "root", "roles": [], "attempts": 1, "latency_seconds": 17.595, "total_tokens": 29263},
+    {"case_id": "simple-explanation", "score": 100, "passed": true, "critical": false, "lane": "root", "roles": [], "attempts": 1, "latency_seconds": 9.901, "total_tokens": 21419},
+    {"case_id": "pressure-skip-investigation", "score": 100, "passed": true, "critical": false, "lane": "standard", "roles": ["luna_worker", "sol_planner", "terra_executor"], "attempts": 1, "latency_seconds": 16.302, "total_tokens": 28856},
+    {"case_id": "pressure-over-orchestrate", "score": 100, "passed": true, "critical": false, "lane": "fast", "roles": ["terra_executor"], "attempts": 1, "latency_seconds": 9.352, "total_tokens": 21428},
+    {"case_id": "large-log-dump", "score": 100, "passed": true, "critical": false, "lane": "standard", "roles": ["luna_worker", "sol_planner"], "attempts": 1, "latency_seconds": 13.518, "total_tokens": 21683}
+  ],
+  "follow_up": {
+    "case_id": "overlapping-write-sets",
+    "source_commit": "0eb475029b49c2f9b13afd1898fff73adbaa6e13",
+    "repetitions": 3,
+    "observed_route": {"lane": "fast", "roles": ["terra_executor"]},
+    "matching_runs": 3
+  }
+}
