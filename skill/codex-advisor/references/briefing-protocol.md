@@ -1,6 +1,6 @@
 # Briefing Protocol
 
-Use artifacts to move evidence between model roles. Do not rely on inherited transcript context for correctness.
+Use these as optional templates when an artifact will save context or preserve a consequential decision. Plain-language briefs are fine. Do not force every task through every template.
 
 ## Luna investigation brief
 
@@ -28,7 +28,7 @@ Use artifacts to move evidence between model roles. Do not rely on inherited tra
 ## Return EVIDENCE_PACKET. Do not edit files.
 ```
 
-Luna may read a broad code surface. It must prefer `rg`/`rg --files`, use at most three shell calls, cap each command to 80 lines or 8 KB, avoid rereads, cite `path:line` and symbols, and name contradictions and unknowns. Use symlink-aware inspection when relevant.
+Luna may read a broad code surface. Prefer `rg`/`rg --files`, a few focused calls, cited `path:line` evidence, and explicit contradictions or unknowns. Use symlink-aware inspection when relevant.
 
 ## Sol advisor brief
 
@@ -91,6 +91,8 @@ B. <option and known tradeoff>
 
 ## Terra execution brief
 
+Only the outcome and `## Owned paths` section are required by the runner. Add the other fields when they clarify implementation.
+
 ```markdown
 # EXECUTION SLICE: <name>
 
@@ -115,6 +117,6 @@ B. <option and known tradeoff>
 ## Return SLICE_REPORT.
 ```
 
-## Reject malformed briefs
+## Reject unusable briefs
 
-Reject a brief when it has no precise goal/question, omits material constraints, hides rejected paths, includes raw logs/full diffs without a reason, or asks the role to cross its authority boundary. Return `BRIEFING_REJECTED: <specific defect>`.
+Reject a brief only when the role cannot safely act: no intelligible goal, missing material authority or constraints, or a request to cross its boundary. Return `BRIEFING_REJECTED: <specific defect>`. Prefer acting on a concise imperfect brief over requesting ceremonial fields.

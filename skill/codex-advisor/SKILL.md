@@ -1,65 +1,52 @@
 ---
 name: codex-advisor
-description: Use when a Codex task needs architecture judgment, implementation planning, broad repository investigation, bounded execution, a consequential second opinion, pre-merge review, recovery after repeated failures, or token-efficient Sol, Luna, and Terra routing.
+description: Use when a Codex task would benefit from specialist architecture judgment, broad repository investigation, implementation planning, bounded execution, a consequential second opinion, pre-merge review, or recovery after repeated failures.
 ---
 
 # Codex Advisor
 
-Route by cost: Luna gathers evidence, Sol decides/plans, Terra executes. Use the shortest safe lane.
-
-**Rule:** names do not pin models. Select a configured role or use the runner.
+Use specialists only when they reduce uncertainty or execution cost. Root remains the primary agent and may inspect, plan, implement, verify, and finish directly.
 
 ## Roles
 
-| Role | Pin | Purpose | Writes |
+| Role | Default | Best for | Writes |
 |---|---|---|---|
-| `sol_advisor` | Sol `xhigh` | Forks, audits, unblocking | No |
-| `sol_planner` | Sol `xhigh` | Plan contracts | No |
-| `luna_worker` | Luna `medium` | Cheap long-context `rg` evidence | No |
-| `terra_executor` | Terra `xhigh` | Bounded implementation/tests | Yes |
+| `luna_worker` | Luna `medium` | Cheap broad search and cited evidence | No |
+| `sol_advisor` | Sol `xhigh` | Consequential forks, audits, unblocking | No |
+| `sol_planner` | Sol `xhigh` | Plans when a real contract is missing | No |
+| `terra_executor` | Terra `xhigh` | A bounded implementation or test slice | Yes |
 
-Root owns scope, accepted evidence, integration, and completion claims.
+Names do not pin models. Use configured roles or the fallback runner.
 
-## Lanes
+## Choose the shortest useful path
 
-| Lane | Trigger | Sequence |
-|---|---|---|
-| Root | No specialist evidence/judgment/execution | Root only |
-| Fast | Clear, bounded, low-risk | Root contract -> Terra |
-| Standard | Unfamiliar/cross-cutting | Missing evidence: Luna; missing contract: planner; requested execution: Terra |
-| High-risk | Architecture/security/data risk or two failed fixes | Luna if needed -> advisor -> planner if needed -> Terra if requested -> Luna sweep -> optional Sol audit |
+- **Root only:** Evidence is already available, the task is simple, or root can safely complete it.
+- **Luna:** Entry points, invariants, or current repository facts are genuinely missing.
+- **Sol advisor:** A consequential decision has competing options. Skip it when there is no real fork.
+- **Sol planner:** Execution needs a contract that root does not already have.
+- **Terra:** The user requested implementation and delegation will help.
 
-Unknown entry points or invariants stay Standard; Luna discovers them. Escalate only for a consequential architecture choice, security boundary, irreversible data-integrity risk, or repeated failure. Database access alone is not High-risk.
+There is no required sequence. Do not invoke a role to prove the skill was used. Existing evidence skips Luna; an existing decision or plan skips Sol; root may integrate and verify without Terra.
 
-Omit satisfied or unauthorized stages. Accepted current evidence forbids redundant Luna; an existing contract skips Sol; evidence/advice/plan-only scope stops before Terra. Start one Luna; add one only for a disjoint search. Keep Terra sequential unless writes are isolated.
+After partial work, root inspects the actual diff and focused checks first. Refresh with Luna only when changed state makes evidence uncertain. Return to Terra only when a correction remains. Add Sol only when the underlying decision is now questionable.
 
-After partial Terra execution, use High-risk recovery: root inspects the actual diff, Luna refreshes changed evidence, then Terra receives one recovery slice. Add Sol only when the prior decision or plan is invalid.
+## Briefs and reports
 
-## Invocation
+Brief in plain language. Give each role one outcome, relevant evidence, constraints, and stop conditions. Terra also needs explicit owned paths so write scope can be enforced.
 
-Prefer native roles. Otherwise:
+Treat response contracts as useful templates, not ceremony. Extra bullets, headings, wording drift, or omitted optional fields should produce a warning—not another model call. Accept semantically useful output and let root note any caveat.
+
+Rerun only when the result is unusable or unsafe: process failure, wrong/stale fingerprint, repository mutation during read-only work, missing core verdict/decision, or writes outside Terra's owned paths.
+
+Prefer `rg`, compact artifacts, and one specialist at a time. Luna should usually answer one question with a small cited evidence set. Terra should usually receive one outcome, not a full transcript.
+
+## Fallback
 
 ```bash
 ~/.codex/skills/codex-advisor/scripts/run-role.sh \
   terra-executor "$PWD" brief.md report.md
 ```
 
-Roles: `sol-advisor`, `sol-planner`, `luna-worker`, `terra-executor`.
+Read `references/runtime-operations.md` for runner and recovery behavior. Use `references/briefing-protocol.md` and `references/response-contracts.md` only when a reusable artifact helps.
 
-The runner isolates unrelated skills, embeds only the selected output schema, pins model/effort/sandbox, caps bytes, validates structure/semantics, checks Terra's Git-visible owned paths, and atomically promotes valid output. Read `references/runtime-operations.md` before fallback, parallelism, retry, or recovery.
-
-## Workflow
-
-1. **Luna:** Ask one narrow question over broad read-only roots. Require fingerprinted `path:line` evidence. Max three shell calls, 80 lines/8 KB each, no rereads, eight findings. Use symlink-aware tools when needed.
-2. **Sol:** Send accepted evidence, constraints, and rejected paths. Target 500-1,000 tokens; hard cap 1,500. Use advisor only for a real fork/audit; otherwise planner once. Missing evidence returns one Luna query.
-3. **Terra:** Send one slice with owned paths, test signal, criteria, and stop conditions. Stop on contradictions.
-4. **Root:** Verify actual diff/commands. Reports never override runtime truth.
-
-Read `references/briefing-protocol.md` for briefs and `references/response-contracts.md` when judging outputs.
-
-## Resources
-
-- `references/runtime-operations.md`: isolation, atomic output, retry/recovery.
-- `scripts/run-role.sh`: pinned fallback.
-- `scripts/worktree-state.py`: Terra pre/post scope verifier.
-- `assets/agent-configs/*.toml`: native roles.
+Root verifies the real diff, commands, runtime state, and completion claim. Reports are evidence, not authority.

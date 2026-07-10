@@ -17,16 +17,18 @@
 - repository and distinct paths;
 - model/effort availability;
 - role-specific brief/output byte caps;
-- Terra execution headings;
-- unique, ordered response headings with nonempty bodies;
-- exact runner-computed Luna fingerprint/evidence shape, Sol confidence values, and Terra's decision enum.
+- Terra owned paths;
+- core ordered response headings with nonempty bodies;
+- the runner-computed Luna fingerprint, repository stability, Terra's decision enum, and Terra's actual write scope.
 - Terra's declared owned paths against pre/post snapshots of Git-visible files. Scope violations remain in the worktree for deliberate inspection and produce `<output>.scope.json`; the runner never destroys unknown work.
+
+Formatting preferences are soft. Extra headings, oversized evidence lists, missing citations, incomplete plan fields, and incomplete command/result wording emit warnings but do not reject an otherwise usable report. Root decides whether the caveat matters. Do not spend another model call just to repair prose.
 
 Default watchdogs are 10 minutes for Luna, 15 for Sol, and 30 for Terra. Override with a positive `CODEX_ADVISOR_TIMEOUT_SECONDS` value.
 
 The selected response schema is embedded in the role prompt; specialists do not open the shared contract reference.
 
-Model output is written to a temporary file. Valid output atomically replaces the requested artifact. Malformed output is saved as `<output>.invalid`; nonzero process output as `<output>.failed`. Neither is an accepted result.
+Model output is written to a temporary file. Accepted output atomically replaces the requested artifact. Structurally unusable or unsafe output is saved as `<output>.invalid`; nonzero process output as `<output>.failed`. Neither is an accepted result.
 
 The runner applies `umask 077`, so new briefs, reports, failure artifacts, and scope reports are private to the current user by default. Redact sensitive material and remove retained artifacts when no longer needed.
 
@@ -34,13 +36,14 @@ The default model pins can be overridden without editing the skill: `CODEX_ADVIS
 
 ## Retry And Recovery
 
-- Retry read-only Luna/Sol once only for a transient process failure.
-- Fix the brief before retrying malformed output.
+- Retry read-only Luna/Sol once only for a transient process failure or a missing core result.
+- Do not retry for report-shape drift; use the accepted report and warning.
 - Never blindly retry Terra after partial execution.
 - After Terra failure, freeze execution and inspect the actual diff and focused test state.
 - Classify changed paths as valid partial progress, invalid change requiring deliberate reversal, or unresolved.
-- Re-run Luna if the worktree fingerprint changed.
-- Give Terra a new narrowly owned recovery slice with current state, test signal, criteria, and stop conditions.
+- Re-run Luna only when changed state makes material evidence uncertain.
+- Give Terra a new narrowly owned recovery slice only when an actual correction remains.
+- Add Sol only when the prior decision is no longer trustworthy.
 
 ## Durable Artifacts
 
