@@ -24,11 +24,16 @@ Root owns scope, accepted evidence, integration, and completion claims.
 
 | Lane | Trigger | Sequence |
 |---|---|---|
+| Root | No specialist evidence/judgment/execution | Root only |
 | Fast | Clear, bounded, low-risk | Root contract -> Terra |
-| Standard | Unfamiliar/cross-cutting | Luna -> Sol planner -> Terra |
-| High-risk | Architecture/security/data risk or two failed fixes | Luna -> Sol advisor -> planner if needed -> Terra -> Luna sweep -> optional Sol audit |
+| Standard | Unfamiliar/cross-cutting | Missing evidence: Luna; missing contract: planner; requested execution: Terra |
+| High-risk | Architecture/security/data risk or two failed fixes | Luna if needed -> advisor -> planner if needed -> Terra if requested -> Luna sweep -> optional Sol audit |
 
-Skip Luna when evidence is verified. Skip Sol when root can write the contract. Start one Luna; add one only for a disjoint search. Keep Terra sequential unless writes are isolated.
+Unknown entry points or invariants stay Standard; Luna discovers them. Escalate only for a consequential architecture choice, security boundary, irreversible data-integrity risk, or repeated failure. Database access alone is not High-risk.
+
+Omit satisfied or unauthorized stages. Accepted current evidence forbids redundant Luna; an existing contract skips Sol; evidence/advice/plan-only scope stops before Terra. Start one Luna; add one only for a disjoint search. Keep Terra sequential unless writes are isolated.
+
+After partial Terra execution, use High-risk recovery: root inspects the actual diff, Luna refreshes changed evidence, then Terra receives one recovery slice. Add Sol only when the prior decision or plan is invalid.
 
 ## Invocation
 

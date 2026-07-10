@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from evals.evaluate import score_case, token_usage
+from evals.evaluate import live_prompt, run_with_retries, score_case, semantic_retry_needed, token_usage
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +37,7 @@ class RepositoryShapeTests(unittest.TestCase):
         text = (SKILL / "SKILL.md").read_text()
         self.assertRegex(text, r"\A---\nname: codex-advisor\ndescription: Use when ")
         self.assertLessEqual(len(text.split()), 500)
+        self.assertRegex(text, r"\| Root \|[^\n]+\| Root only \|")
 
     def test_role_pins_are_exact(self) -> None:
         expected = {
@@ -76,6 +77,8 @@ class RepositoryShapeTests(unittest.TestCase):
             self.assertIsInstance(case["forbidden_roles"], list)
             self.assertGreaterEqual(len(case["prompt"]), 40)
             self.assertGreater(case["max_output_chars"], 0)
+            if "terra_executor" in case["expected_roles"]:
+                self.assertNotRegex(case["prompt"].lower(), r"do not (?:implement|execute)")
 
     def test_checked_in_live_smoke_is_sanitized_and_passing(self) -> None:
         baseline = json.loads((ROOT / "evals" / "baselines" / "live-smoke.json").read_text())
@@ -476,6 +479,40 @@ class EvalScoringTests(unittest.TestCase):
         self.assertEqual(100, usage["input_tokens"])
         self.assertEqual(40, usage["output_tokens"])
         self.assertEqual(140, usage["total_tokens"])
+
+    def test_transient_process_failure_retries_once(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            counter = root / "counter"
+            command = root / "flaky.sh"
+            command.write_text(
+                "#!/bin/sh\n"
+                f"counter='{counter}'\n"
+                "n=0\n"
+                "test ! -f \"$counter\" || n=$(cat \"$counter\")\n"
+                "n=$((n + 1))\n"
+                "printf '%s\\n' \"$n\" > \"$counter\"\n"
+                "test \"$n\" -gt 1\n"
+            )
+            command.chmod(0o755)
+            result, attempts, timed_out = run_with_retries([str(command)], os.environ.copy(), 5, 1)
+            self.assertEqual(0, result.returncode)
+            self.assertEqual(2, attempts)
+            self.assertFalse(timed_out)
+
+    def test_semantic_retry_only_for_missing_json_or_nonce_mismatch(self) -> None:
+        self.assertTrue(semantic_retry_needed(None, "nonce-1"))
+        self.assertTrue(semantic_retry_needed({"nonce": "wrong"}, "nonce-1"))
+        self.assertFalse(semantic_retry_needed({"nonce": "nonce-1"}, "nonce-1"))
+
+    def test_live_prompt_requests_hypothetical_sequence_without_authorizing_execution(self) -> None:
+        case = {"prompt": "A bounded task."}
+        prompt = live_prompt(case, "nonce-1")
+        self.assertIn("hypothetical specialist sequence", prompt)
+        self.assertIn("Do not invoke", prompt)
+        self.assertIn("task's stated scope", prompt)
+        self.assertIn("root requires an empty roles list", prompt)
+        self.assertIn("does not remove Terra", prompt)
 
 
 if __name__ == "__main__":

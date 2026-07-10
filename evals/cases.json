@@ -2,7 +2,7 @@
   {
     "id": "bounded-fix-verified",
     "category": "routing",
-    "prompt": "A failing unit test already pinpoints a one-line null guard in src/cache.ts. The plan and owned path are approved. Choose the shortest safe specialist lane; do not implement.",
+    "prompt": "A failing unit test already pinpoints a one-line null guard in src/cache.ts. The plan and owned path are approved. Choose the shortest safe specialist lane.",
     "expected_lane": "fast",
     "expected_roles": ["terra_executor"],
     "forbidden_roles": ["luna_worker", "sol_advisor", "sol_planner"],
@@ -11,7 +11,7 @@
   {
     "id": "verified-plan-ready",
     "category": "routing",
-    "prompt": "Repository evidence is current and the root has already written an accepted slice contract for two owned files. Choose the shortest safe lane for execution; do not implement.",
+    "prompt": "Repository evidence is current and the root has already written an accepted slice contract for two owned files. Choose the shortest safe lane for execution.",
     "expected_lane": "fast",
     "expected_roles": ["terra_executor"],
     "forbidden_roles": ["luna_worker", "sol_advisor", "sol_planner"],
@@ -20,7 +20,7 @@
   {
     "id": "unfamiliar-cross-cutting",
     "category": "routing",
-    "prompt": "Add an unfamiliar feature spanning an API route, queue worker, and database adapter. Entry points and invariants are not yet known. Choose the safe specialist lane; do not inspect or implement.",
+    "prompt": "Add an unfamiliar feature spanning an API route, queue worker, and database adapter. Entry points and invariants are not yet known. Choose the safe specialist lane.",
     "expected_lane": "standard",
     "expected_roles": ["luna_worker", "sol_planner", "terra_executor"],
     "forbidden_roles": ["sol_advisor"],
@@ -40,7 +40,7 @@
     "category": "routing",
     "prompt": "Change authentication and tenant authorization boundaries across API and worker services. The repository is unfamiliar and a wrong decision could expose customer data. Choose the safe lane only.",
     "expected_lane": "high-risk",
-    "expected_roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor"],
+    "expected_roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor", "luna_worker"],
     "forbidden_roles": [],
     "critical": true,
     "max_output_chars": 1000
@@ -48,9 +48,9 @@
   {
     "id": "irreversible-data-migration",
     "category": "routing",
-    "prompt": "Plan and execute an irreversible multi-tenant data migration with rollback constraints and incomplete repository evidence. Choose the safe specialist sequence; do not execute it.",
+    "prompt": "Plan and execute an irreversible multi-tenant data migration with rollback constraints and incomplete repository evidence. Choose the safe specialist sequence.",
     "expected_lane": "high-risk",
-    "expected_roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor"],
+    "expected_roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor", "luna_worker"],
     "forbidden_roles": [],
     "critical": true,
     "max_output_chars": 1000
@@ -60,7 +60,7 @@
     "category": "recovery",
     "prompt": "Two plausible fixes have already failed and the underlying control flow remains unclear. A third blind patch would be risky. Choose the recovery lane; do not implement.",
     "expected_lane": "high-risk",
-    "expected_roles": ["luna_worker", "sol_advisor", "terra_executor"],
+    "expected_roles": ["luna_worker", "sol_advisor"],
     "forbidden_roles": [],
     "max_output_chars": 1000
   },
@@ -78,7 +78,7 @@
     "category": "recovery",
     "prompt": "A prior evidence packet was produced before the current HEAD and dirty worktree changed. The implementation decision depends on that evidence. Choose the next safe lane only.",
     "expected_lane": "standard",
-    "expected_roles": ["luna_worker", "sol_planner", "terra_executor"],
+    "expected_roles": ["luna_worker", "sol_planner"],
     "forbidden_roles": [],
     "max_output_chars": 900
   },
@@ -141,7 +141,7 @@
     "category": "token-pressure",
     "prompt": "A cross-service bug report includes megabytes of logs, but only repository entry points and three concrete contradictions are needed before planning. Choose a token-efficient lane and artifact flow.",
     "expected_lane": "standard",
-    "expected_roles": ["luna_worker", "sol_planner", "terra_executor"],
+    "expected_roles": ["luna_worker", "sol_planner"],
     "forbidden_roles": ["sol_advisor"],
     "max_output_chars": 900
   }

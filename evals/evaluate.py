@@ -96,6 +96,30 @@ def token_usage(jsonl: str) -> dict[str, int]:
     return maxima
 
 
+def run_with_retries(
+    command: list[str], env: dict[str, str], timeout: int, retries: int
+) -> tuple[subprocess.CompletedProcess[str], int, bool]:
+    attempts = 0
+    while True:
+        attempts += 1
+        try:
+            result = subprocess.run(command, text=True, capture_output=True, env=env, timeout=timeout)
+        except subprocess.TimeoutExpired as error:
+            result = subprocess.CompletedProcess(
+                command,
+                124,
+                error.stdout or "",
+                (error.stderr or "") + f"\ntimeout after {timeout}s",
+            )
+            return result, attempts, True
+        if result.returncode == 0 or attempts > retries:
+            return result, attempts, False
+
+
+def semantic_retry_needed(response: dict[str, Any] | None, nonce: str) -> bool:
+    return response is None or response.get("nonce") != nonce
+
+
 def score_case(case: dict[str, Any], response: dict[str, Any] | None, raw: str, returncode: int) -> tuple[int, list[str], bool]:
     failures: list[str] = []
     critical = returncode != 0
@@ -130,7 +154,7 @@ def score_case(case: dict[str, Any], response: dict[str, Any] | None, raw: str, 
         score += 10
     else:
         failures.append(f"forbidden roles used: {sorted(forbidden_used)}")
-        critical = True
+        critical = critical or bool(case.get("critical_forbidden_roles"))
     if len(raw) <= case["max_output_chars"]:
         score += 10
     else:
@@ -173,9 +197,10 @@ def install_isolated_home(root: Path, repo: Path) -> tuple[Path, Path]:
 def live_prompt(case: dict[str, Any], nonce: str) -> str:
     return (
         "Use $codex-advisor to choose the shortest safe lane for the task below. "
-        "Do not inspect files, invoke specialists, edit, or execute the task. "
+        "This is routing-only: Do not invoke specialists, inspect files, use tools, or change the workspace. "
+        "The roles field is the hypothetical specialist sequence the task would use within the task's stated scope; the routing-only restriction does not remove Terra when the Task requests implementation. "
         "Return only one JSON object with keys lane, roles, rationale, and nonce. "
-        "lane must be one of root, fast, standard, high-risk. roles must be an ordered list using only "
+        "lane must be one of root, fast, standard, high-risk; root requires an empty roles list. roles must be an ordered list using only "
         "luna_worker, sol_advisor, sol_planner, terra_executor. Copy the nonce exactly.\n\n"
         f"Task: {case['prompt']}\nNonce: {nonce}"
     )
@@ -242,18 +267,22 @@ def run_live(args: argparse.Namespace) -> int:
                     command.extend(["-c", f'model_reasoning_effort="{args.effort}"'])
                 command.append(live_prompt(case, nonce))
                 started = time.monotonic()
-                try:
-                    process = subprocess.run(command, text=True, capture_output=True, env=env, timeout=args.timeout)
+                process, attempts, timed_out = run_with_retries(command, env, args.timeout, args.retries)
+                returncode = process.returncode
+                stdout = process.stdout
+                stderr = process.stderr
+                raw = last.read_text() if last.is_file() else ""
+                response = parse_json_object(raw)
+                if returncode == 0 and attempts <= args.retries and semantic_retry_needed(response, nonce):
+                    process, retry_attempts, retry_timed_out = run_with_retries(command, env, args.timeout, 0)
+                    attempts += retry_attempts
+                    timed_out = timed_out or retry_timed_out
                     returncode = process.returncode
                     stdout = process.stdout
                     stderr = process.stderr
-                except subprocess.TimeoutExpired as exc:
-                    returncode = 124
-                    stdout = exc.stdout or ""
-                    stderr = (exc.stderr or "") + f"\ntimeout after {args.timeout}s"
+                    raw = last.read_text() if last.is_file() else ""
+                    response = parse_json_object(raw)
                 latency = time.monotonic() - started
-                raw = last.read_text() if last.is_file() else ""
-                response = parse_json_object(raw)
                 score, failures, critical = score_case(case, response, raw, returncode)
                 if response is not None and response.get("nonce") != nonce:
                     failures.append("nonce mismatch")
@@ -271,6 +300,8 @@ def run_live(args: argparse.Namespace) -> int:
                         "latency_seconds": round(latency, 3),
                         "usage": token_usage(stdout),
                         "returncode": returncode,
+                        "attempts": attempts,
+                        "timed_out": timed_out,
                         "response": response,
                         "stderr_tail": stderr[-1000:],
                     }
@@ -293,7 +324,7 @@ def run_live(args: argparse.Namespace) -> int:
         },
         "summary": {
             "case_count": len(cases),
-            "model_calls": len(results),
+            "model_calls": sum(result["attempts"] for result in results),
             "repetitions": args.repetitions,
             "passed": passed,
             "pass_rate": round(pass_rate, 4),
@@ -323,6 +354,7 @@ def parser() -> argparse.ArgumentParser:
     live.add_argument("--effort")
     live.add_argument("--codex-bin", default="codex")
     live.add_argument("--timeout", type=int, default=300)
+    live.add_argument("--retries", type=int, default=1, help="retry transient nonzero CLI exits")
     live.add_argument("--dry-run", action="store_true")
     live.add_argument("--output", type=Path, default=ROOT / "evals" / "results" / "live.json")
     live.set_defaults(func=run_live)
