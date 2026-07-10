@@ -1,5 +1,7 @@
 # Response Contracts
 
+These are compact templates, not acceptance rituals. Preserve the core result and evidence; wording, bullet counts, extra headings, and optional fields may drift. The runner warns on useful-but-imperfect reports and rejects only structural or safety failures.
+
 ## EVIDENCE_PACKET
 
 ```markdown

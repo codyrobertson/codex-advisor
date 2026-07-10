@@ -114,20 +114,10 @@ if (( brief_bytes > max_brief_bytes )); then
 fi
 
 if [[ "$role" == 'terra-executor' ]]; then
-  required_headings=(
-    '## Plan contract'
-    '## This slice'
-    '## Owned paths'
-    '## Test-first signal'
-    '## Acceptance criteria'
-    '## Stop conditions'
-  )
-  for heading in "${required_headings[@]}"; do
-    rg -F -x -- "$heading" "$brief_abs" >/dev/null || {
-      printf 'Terra briefing missing required heading: %s\n' "$heading" >&2
-      exit 65
-    }
-  done
+  rg -F -x -- '## Owned paths' "$brief_abs" >/dev/null || {
+    printf 'Terra briefing needs an exact ## Owned paths heading for write-scope enforcement.\n' >&2
+    exit 65
+  }
   owned_paths=()
   owned_count=0
   while IFS= read -r owned; do
@@ -342,6 +332,10 @@ reject_output() {
   exit 65
 }
 
+warn_output() {
+  printf 'Warning: %s. Accepting the report; root must judge the evidence.\n' "$1" >&2
+}
+
 output_bytes=$(wc -c < "$tmp_output" | tr -d '[:space:]')
 if (( output_bytes > max_output_bytes )); then
   reject_output "Role output too large: $output_bytes bytes, limit $max_output_bytes"
@@ -370,7 +364,9 @@ for heading in "${output_headings[@]}"; do
 done
 
 heading_count=$(rg -c '^## ' "$tmp_output" || true)
-(( heading_count == ${#output_headings[@]} )) || reject_output 'Role output contains extra headings'
+if (( heading_count != ${#output_headings[@]} )); then
+  warn_output 'role output contains extra headings'
+fi
 
 total_lines=$(awk 'END { print NR }' "$tmp_output")
 section_bodies=()
@@ -394,34 +390,34 @@ case "$role" in
     [[ "$current_head" == "$repo_head" && "$current_diff_hash" == "$repo_diff_hash" ]] || reject_output 'Repository state changed during Luna investigation'
     printf '%s\n' "${section_bodies[0]}" | rg -F -q "HEAD $repo_head" || reject_output 'Luna fingerprint does not match repository HEAD'
     printf '%s\n' "${section_bodies[0]}" | rg -F -q "diff $repo_diff_hash" || reject_output 'Luna fingerprint does not match repository diff hash'
-    printf '%s\n' "${section_bodies[1]}" | rg -q '^- E[0-9]+ \[(observed|inferred)\]:' || reject_output 'Luna findings lack typed evidence entries'
+    printf '%s\n' "${section_bodies[1]}" | rg -q '^- E[0-9]+ \[(observed|inferred)\]:' || warn_output 'Luna findings lack typed evidence entries'
     finding_count=$(printf '%s\n' "${section_bodies[1]}" | rg -c '^- E[0-9]+ \[(observed|inferred)\]:' || true)
-    (( finding_count <= 8 )) || reject_output "Luna returned $finding_count findings; limit is 8"
+    (( finding_count <= 8 )) || warn_output "Luna returned $finding_count findings; preferred limit is 8"
     observed_count=$(printf '%s\n' "${section_bodies[1]}" | rg -c '^- E[0-9]+ \[observed\]:' || true)
     observed_with_location=$(printf '%s\n' "${section_bodies[1]}" | rg -c '^- E[0-9]+ \[observed\]:.* - .+:[0-9]+' || true)
-    (( observed_count == observed_with_location )) || reject_output 'Every observed Luna finding needs path:line evidence'
+    (( observed_count == observed_with_location )) || warn_output 'some observed Luna findings lack path:line evidence'
     next_read_count=$(printf '%s\n' "${section_bodies[5]}" | rg -c '^- ' || true)
-    (( next_read_count <= 3 )) || reject_output "Luna returned $next_read_count next reads; limit is 3"
+    (( next_read_count <= 3 )) || warn_output "Luna returned $next_read_count next reads; preferred limit is 3"
     ;;
   sol-advisor)
-    printf '%s\n' "${section_bodies[2]}" | rg -q '^- .+ -> .+' || reject_output 'Advisor risks must pair each risk with a mitigation'
+    printf '%s\n' "${section_bodies[2]}" | rg -q '^- .+ -> .+' || warn_output 'advisor risks do not pair every risk with a mitigation'
     confidence=$(printf '%s\n' "${section_bodies[4]}" | sed -n '/[^[:space:]]/{p;q;}')
-    printf '%s\n' "$confidence" | rg -q '^(High|Medium|Low)([[:space:]]*[-:].*)?$' || reject_output 'Advisor confidence must start with High, Medium, or Low'
+    printf '%s\n' "$confidence" | rg -q '^(High|Medium|Low)([[:space:]]*[-:].*)?$' || warn_output 'advisor confidence does not use the preferred High, Medium, or Low form'
     ;;
   sol-planner)
     for term in 'Owned paths' 'Test-first signal' 'Done when' 'Rollback'; do
-      printf '%s\n' "${section_bodies[2]}" | rg -qi "$term" || reject_output "Planner slices are missing: $term"
+      printf '%s\n' "${section_bodies[2]}" | rg -qi "$term" || warn_output "planner slices omit the preferred field: $term"
     done
     confidence=$(printf '%s\n' "${section_bodies[6]}" | sed -n '/[^[:space:]]/{p;q;}')
-    printf '%s\n' "$confidence" | rg -q '^(High|Medium|Low)([[:space:]]*[-:].*)?$' || reject_output 'Planner confidence must start with High, Medium, or Low'
+    printf '%s\n' "$confidence" | rg -q '^(High|Medium|Low)([[:space:]]*[-:].*)?$' || warn_output 'planner confidence does not use the preferred High, Medium, or Low form'
     ;;
   terra-executor)
     decision=$(printf '%s\n' "${section_bodies[6]}" | sed -n '/[^[:space:]]/{p;q;}')
     printf '%s\n' "$decision" | rg -q '^(complete|blocked|needs review)$' || reject_output 'Terra decision must be complete, blocked, or needs review'
     if [[ "$decision" == 'complete' ]]; then
-      printf '%s\n' "${section_bodies[1]}" | rg -q '.+ -> .+' || reject_output 'Completed Terra report lacks a test-first command and observed signal'
-      printf '%s\n' "${section_bodies[2]}" | rg -q '^- .+ - .+' || reject_output 'Completed Terra report changes must be path-qualified'
-      printf '%s\n' "${section_bodies[3]}" | rg -q '^- .+ -> .+' || reject_output 'Completed Terra report lacks exact verification results'
+      printf '%s\n' "${section_bodies[1]}" | rg -q '.+ -> .+' || warn_output 'completed Terra report lacks a test-first command and observed signal'
+      printf '%s\n' "${section_bodies[2]}" | rg -q '^- .+ - .+' || warn_output 'completed Terra report changes are not path-qualified'
+      printf '%s\n' "${section_bodies[3]}" | rg -q '^- .+ -> .+' || warn_output 'completed Terra report lacks exact verification results'
     fi
     ;;
 esac

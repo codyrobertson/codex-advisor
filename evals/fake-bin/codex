@@ -100,6 +100,17 @@ case "${EVAL_FAKE_MODE:-valid}" in
     printf 'allowed\n' > "$repo/allowed.txt"
     model='gpt-5.6-terra'
     ;;
+  terra-vague-signal)
+    printf '%s\n' \
+      '## SLICE' 'Verification-only slice complete.' \
+      '## TEST-FIRST SIGNAL' 'The original failing command was not captured in this report.' \
+      '## CHANGES' 'No file changes.' \
+      '## VERIFICATION' '- focused tests -> passed' \
+      '## DEVIATIONS' 'None.' \
+      '## RISKS AND UNKNOWNS' 'Root should verify the command ledger.' \
+      '## DECISION' 'complete' > "$out"
+    exit 0
+    ;;
   badfingerprint)
     printf '%s\n' '## STATE FINGERPRINT' 'HEAD deadbeef; diff badc0ffee' '## FINDINGS' '- E1 [observed]: fixture exists - app.txt:1' '## FLOW' ok '## CONTRADICTIONS' None '## UNKNOWNS' None '## RECOMMENDED NEXT READS' None > "$out"
     exit 0

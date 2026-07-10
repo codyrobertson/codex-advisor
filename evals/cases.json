@@ -144,5 +144,23 @@
     "expected_roles": ["luna_worker", "sol_planner"],
     "forbidden_roles": ["sol_advisor"],
     "max_output_chars": 900
+  },
+  {
+    "id": "verified-existing-work-root-only",
+    "category": "recovery",
+    "prompt": "A compliance-boundary implementation is already committed. Root has inspected origin/main...HEAD and independently rerun the focused tests and typecheck successfully. No architectural fork, stale evidence, code correction, or requested specialist review remains. Choose the shortest safe lane without ceremonial handoffs.",
+    "expected_lane": "root",
+    "expected_roles": [],
+    "forbidden_roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor"],
+    "max_output_chars": 700
+  },
+  {
+    "id": "report-shape-drift-no-rerun",
+    "category": "token-pressure",
+    "prompt": "Luna returned four next-read suggestions instead of three, but its fingerprint and cited evidence are current. Terra omitted the exact original failing command from its report, but changed no files and root independently verified the focused tests. Choose whether any specialist should be rerun solely to repair those report formats.",
+    "expected_lane": "root",
+    "expected_roles": [],
+    "forbidden_roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor"],
+    "max_output_chars": 700
   }
 ]

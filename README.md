@@ -4,6 +4,8 @@ I got tired of throwing the biggest model at every coding task.
 
 Codex Advisor gives each job to the cheapest model that can handle it. Luna searches the repo. Sol makes the hard calls and writes the plan. Terra gets a small, explicit slice to implement. The root agent still owns scope, verification, and the final call.
 
+The roles are optional specialists, not a pipeline. If the root already has the evidence and can finish safely, it should. The fallback runner enforces fingerprints and write scope, but treats report-format drift as a warning so a useful result does not trigger another expensive model call.
+
 | Role | Default model | What it does | Can write? |
 |---|---|---|---|
 | `luna_worker` | `gpt-5.6-luna`, `medium` | Searches large repos and returns cited evidence | No |
@@ -51,7 +53,7 @@ The deterministic suite creates a temporary Git repo and runs every role through
 python3 evals/evaluate.py deterministic
 ```
 
-The live suite asks Codex to route 16 tasks without leaking the expected answer. The cases cover simple fixes, messy cross-cutting work, security changes, failed patches, stale evidence, and pressure to use too many or too few models.
+The live suite asks Codex to route 18 tasks without leaking the expected answer. The cases cover simple fixes, messy cross-cutting work, security changes, failed patches, stale evidence, pressure to use too many or too few models, already-verified work, and harmless report drift that should not trigger a rerun.
 
 ```bash
 python3 evals/evaluate.py live --dry-run
@@ -60,7 +62,7 @@ python3 evals/evaluate.py live --repetitions 3 --output evals/results/live.json
 
 A release needs at least 90% exact routing with zero critical failures.
 
-The checked-in [full qualification run](evals/baselines/live-qualification.json) scored 15/16, or 93.75%, with zero critical failures. Median latency was 13.0 seconds and median token use was 25,198.5. The one miss chose Root for a scheduling decision instead of Fast with Terra. I ran that case three more times and got the expected Fast to Terra route all three times. The variance is in the repo because hiding it would make the eval useless.
+The checked-in [full qualification run](evals/baselines/live-qualification.json) scored 15/16, or 93.75%, with zero critical failures on the original matrix. Median latency was 13.0 seconds and median token use was 25,198.5. The one miss chose Root for a scheduling decision instead of Fast with Terra. I ran that case three more times and got the expected Fast to Terra route all three times. The variance is in the repo because hiding it would make the eval useless. The two newer anti-ritual cases can be run independently before paying for another full qualification.
 
 There is also a smaller [three-case smoke run](evals/baselines/live-smoke.json). The public cases are regression tests, not a secret benchmark. If you want to make model quality claims, keep a separate set of held-out prompts.
 

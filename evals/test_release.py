@@ -38,7 +38,8 @@ class RepositoryShapeTests(unittest.TestCase):
         text = (SKILL / "SKILL.md").read_text()
         self.assertRegex(text, r"\A---\nname: codex-advisor\ndescription: Use when ")
         self.assertLessEqual(len(text.split()), 500)
-        self.assertRegex(text, r"\| Root \|[^\n]+\| Root only \|")
+        self.assertIn("Root remains the primary agent", text)
+        self.assertIn("There is no required sequence", text)
 
     def test_role_pins_are_exact(self) -> None:
         expected = {
@@ -72,6 +73,7 @@ class RepositoryShapeTests(unittest.TestCase):
         self.assertTrue({"routing", "boundaries", "recovery", "token-pressure"} <= categories)
         ids = [case["id"] for case in cases]
         self.assertEqual(len(ids), len(set(ids)))
+        self.assertTrue({"verified-existing-work-root-only", "report-shape-drift-no-rerun"} <= set(ids))
         for case in cases:
             self.assertIn(case["expected_lane"], {"root", "fast", "standard", "high-risk"})
             self.assertIsInstance(case["expected_roles"], list)
@@ -161,8 +163,8 @@ class RunnerContractTests(unittest.TestCase):
             self.assertFalse(output.exists())
             self.assertTrue(Path(f"{output}{expected_suffix}").exists())
 
-    def test_luna_semantic_and_budget_violations_are_rejected(self) -> None:
-        modes = ("badfingerprint", "repo-mutated", "luna-nine", "luna-four-reads", "luna-no-path")
+    def test_luna_integrity_violations_are_rejected(self) -> None:
+        modes = ("badfingerprint", "repo-mutated")
         for mode in modes:
             with self.subTest(mode=mode):
                 result, output = self.run_role("luna-worker", mode=mode)
@@ -170,19 +172,32 @@ class RunnerContractTests(unittest.TestCase):
                 self.assertFalse(output.exists())
                 self.assertTrue(Path(f"{output}.invalid").exists())
 
-    def test_role_specific_semantic_violations_are_rejected(self) -> None:
+    def test_report_shape_drift_is_accepted_with_warnings(self) -> None:
         for role, mode in (
+            ("luna-worker", "luna-nine"),
+            ("luna-worker", "luna-four-reads"),
+            ("luna-worker", "luna-no-path"),
             ("sol-advisor", "advisor-bad-risk"),
             ("sol-planner", "planner-no-rollback"),
+            ("terra-executor", "terra-vague-signal"),
+            ("sol-advisor", "extra-heading"),
         ):
             with self.subTest(role=role, mode=mode):
-                result, output = self.run_role(role, mode=mode)
-                self.assertNotEqual(0, result.returncode)
-                self.assertFalse(output.exists())
-                self.assertTrue(Path(f"{output}.invalid").exists())
+                brief = None
+                if role == "terra-executor":
+                    brief = self.base / "terra-report-drift.md"
+                    brief.write_text(
+                        "## Plan contract\nApproved.\n\n## This slice\nVerification only.\n\n"
+                        "## Owned paths\n- None\n\n## Test-first signal\nPrior gap exists.\n\n"
+                        "## Acceptance criteria\nReport current checks.\n\n## Stop conditions\nBefore writes.\n"
+                    )
+                result, output = self.run_role(role, mode=mode, brief=brief)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertTrue(output.exists())
+                self.assertIn("Warning:", result.stderr)
 
-    def test_oversized_or_extra_heading_output_is_rejected(self) -> None:
-        for role, mode in (("sol-advisor", "oversize"), ("sol-advisor", "extra-heading")):
+    def test_oversized_output_is_rejected(self) -> None:
+        for role, mode in (("sol-advisor", "oversize"),):
             with self.subTest(mode=mode):
                 result, output = self.run_role(role, mode=mode)
                 self.assertNotEqual(0, result.returncode)
@@ -410,6 +425,16 @@ class RunnerContractTests(unittest.TestCase):
         brief_result, brief_output = self.run_role("terra-executor", brief=bad_brief)
         self.assertEqual(65, brief_result.returncode)
         self.assertFalse(brief_output.exists())
+
+    def test_terra_brief_only_requires_a_bounded_outcome_and_owned_paths(self) -> None:
+        brief = self.base / "minimal-terra.md"
+        brief.write_text(
+            "Verify the existing implementation and fix only if a focused check fails.\n\n"
+            "## Owned paths\n- app.txt\n"
+        )
+        result, output = self.run_role("terra-executor", brief=brief)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue(output.exists())
 
 
 class InstallerAndEvalCliTests(unittest.TestCase):
