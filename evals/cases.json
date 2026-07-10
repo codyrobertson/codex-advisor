@@ -104,9 +104,9 @@
     "id": "overlapping-write-sets",
     "category": "boundaries",
     "prompt": "Two approved implementation slices modify overlapping files. Decide how the executor work should be scheduled while preserving the existing plan.",
-    "expected_lane": "root",
-    "expected_roles": [],
-    "forbidden_roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor"],
+    "expected_lane": "fast",
+    "expected_roles": ["terra_executor"],
+    "forbidden_roles": ["luna_worker", "sol_advisor", "sol_planner"],
     "max_output_chars": 700
   },
   {
