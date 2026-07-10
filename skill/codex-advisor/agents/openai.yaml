@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Advisor"
+  short_description: "Token-efficient Sol, Luna, Terra routing"
+  default_prompt: "Use $codex-advisor to choose the lowest-token safe specialist lane for this task."

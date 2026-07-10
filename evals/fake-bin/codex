@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" == 'debug' && "${2:-}" == 'models' ]]; then
+  if [[ "${EVAL_FAKE_MODE:-}" == 'unavailable-model' ]]; then
+    printf '%s\n' '[{"slug":"gpt-5.6-sol","supported_reasoning_levels":[{"effort":"xhigh"}]},{"slug":"gpt-5.6-terra","supported_reasoning_levels":[{"effort":"xhigh"}]}]'
+    exit 0
+  fi
+  printf '%s\n' '[{"slug":"gpt-5.6-sol","supported_reasoning_levels":[{"effort":"xhigh"}]},{"slug":"gpt-5.6-luna","supported_reasoning_levels":[{"effort":"medium"}]},{"slug":"gpt-5.6-terra","supported_reasoning_levels":[{"effort":"xhigh"}]}]'
+  exit 0
+fi
+
+out=''
+model=''
+repo=''
+prompt=''
+effort=''
+sandbox=''
+disable=''
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -o|--output-last-message)
+      out=$2
+      shift 2
+      ;;
+    -m|--model)
+      model=$2
+      shift 2
+      ;;
+    -C|--cd)
+      repo=$2
+      shift 2
+      ;;
+    -c|--config)
+      if [[ "$2" == model_reasoning_effort=* ]]; then
+        effort=${2#model_reasoning_effort=}
+        effort=${effort//\"/}
+      fi
+      shift 2
+      ;;
+    -s|--sandbox)
+      sandbox=$2
+      shift 2
+      ;;
+    --disable)
+      disable="${disable}${disable:+,}$2"
+      shift 2
+      ;;
+    *)
+      prompt=$1
+      shift
+      ;;
+  esac
+done
+
+if [[ -n "${EVAL_FAKE_LOG:-}" ]]; then
+  auth_kind=missing
+  [[ -L "${CODEX_HOME:-}/auth.json" ]] && auth_kind=symlink
+  [[ -f "${CODEX_HOME:-}/auth.json" && ! -L "${CODEX_HOME:-}/auth.json" ]] && auth_kind='file'
+  {
+    printf 'home=%s\n' "${HOME:-}"
+    printf 'codex_home=%s\n' "${CODEX_HOME:-}"
+    printf 'auth_kind=%s\n' "$auth_kind"
+    printf 'personal_agents=%s\n' "$(test -e "${CODEX_HOME:-}/AGENTS.md" && printf yes || printf no)"
+    printf 'personal_rules=%s\n' "$(test -e "${CODEX_HOME:-}/rules" && printf yes || printf no)"
+    printf 'skills=%s\n' "$(test -e "${CODEX_HOME:-}/skills" && printf yes || printf no)"
+    printf 'model=%s\n' "$model"
+    printf 'effort=%s\n' "$effort"
+    printf 'sandbox=%s\n' "$sandbox"
+    printf 'disable=%s\n' "$disable"
+  } > "$EVAL_FAKE_LOG"
+fi
+
+[[ -n "$out" ]] || {
+  printf 'fake Codex did not receive an output path\n' >&2
+  exit 64
+}
+
+expected_head=$(printf '%s\n' "$prompt" | sed -n 's/.*HEAD \([0-9a-f][0-9a-f]*\) and diff.*/\1/p' | head -1)
+expected_diff=$(printf '%s\n' "$prompt" | sed -n 's/.*and diff \([0-9a-f][0-9a-f]*\)\..*/\1/p' | head -1)
+
+case "${EVAL_FAKE_MODE:-valid}" in
+  malformed)
+    printf 'malformed output\n' > "$out"
+    exit 0
+    ;;
+  nonzero)
+    printf 'partial output\n' > "$out"
+    exit 23
+    ;;
+  slow)
+    sleep 30
+    exit 0
+    ;;
+  terra-outside)
+    printf 'unexpected\n' > "$repo/outside.txt"
+    model='gpt-5.6-terra'
+    ;;
+  terra-allowed)
+    printf 'allowed\n' > "$repo/allowed.txt"
+    model='gpt-5.6-terra'
+    ;;
+  badfingerprint)
+    printf '%s\n' '## STATE FINGERPRINT' 'HEAD deadbeef; diff badc0ffee' '## FINDINGS' '- E1 [observed]: fixture exists - app.txt:1' '## FLOW' ok '## CONTRADICTIONS' None '## UNKNOWNS' None '## RECOMMENDED NEXT READS' None > "$out"
+    exit 0
+    ;;
+  repo-mutated)
+    printf 'changed during run\n' > "$repo/mutated.txt"
+    ;;
+  luna-nine)
+    printf '%s\n' '## STATE FINGERPRINT' "HEAD $expected_head; diff $expected_diff" '## FINDINGS' \
+      '- E1 [observed]: one - app.txt:1' '- E2 [observed]: two - app.txt:1' '- E3 [observed]: three - app.txt:1' \
+      '- E4 [observed]: four - app.txt:1' '- E5 [observed]: five - app.txt:1' '- E6 [observed]: six - app.txt:1' \
+      '- E7 [observed]: seven - app.txt:1' '- E8 [observed]: eight - app.txt:1' '- E9 [observed]: nine - app.txt:1' \
+      '## FLOW' ok '## CONTRADICTIONS' None '## UNKNOWNS' None '## RECOMMENDED NEXT READS' None > "$out"
+    exit 0
+    ;;
+  luna-four-reads)
+    printf '%s\n' '## STATE FINGERPRINT' "HEAD $expected_head; diff $expected_diff" '## FINDINGS' '- E1 [observed]: fixture exists - app.txt:1' '## FLOW' ok '## CONTRADICTIONS' None '## UNKNOWNS' None '## RECOMMENDED NEXT READS' '- one' '- two' '- three' '- four' > "$out"
+    exit 0
+    ;;
+  luna-no-path)
+    printf '%s\n' '## STATE FINGERPRINT' "HEAD $expected_head; diff $expected_diff" '## FINDINGS' '- E1 [observed]: fixture exists' '## FLOW' ok '## CONTRADICTIONS' None '## UNKNOWNS' None '## RECOMMENDED NEXT READS' None > "$out"
+    exit 0
+    ;;
+  advisor-bad-risk)
+    printf '%s\n' '## VERDICT' ok '## WHY' ok '## RISKS' '- risk without mitigation' '## FIRST MOVE' ok '## CONFIDENCE' High > "$out"
+    exit 0
+    ;;
+  planner-no-rollback)
+    printf '%s\n' '## DECISION' ok '## INVARIANTS' ok '## SLICES' 'Owned paths: x; Test-first signal: y; Done when: z' '## DEPENDENCIES' ok '## VERIFICATION MATRIX' ok '## STOP CONDITIONS' ok '## CONFIDENCE' High > "$out"
+    exit 0
+    ;;
+  oversize)
+    awk 'BEGIN { for (i = 0; i < 7000; i++) printf "x"; printf "\n" }' > "$out"
+    exit 0
+    ;;
+  extra-heading)
+    printf '%s\n' '## VERDICT' ok '## WHY' ok '## RISKS' '- risk -> mitigation' '## FIRST MOVE' ok '## CONFIDENCE' High '## EXTRA' no > "$out"
+    exit 0
+    ;;
+  brief-rejected)
+    printf '%s' 'BRIEFING_REJECTED: missing precise goal' > "$out"
+    exit 0
+    ;;
+esac
+
+case "$model:$prompt" in
+  gpt-5.6-sol:*ADVISOR_VERDICT*)
+    printf '%s\n' \
+      '## VERDICT' 'Choose the bounded option.' \
+      '## WHY' 'It satisfies the stated constraints.' \
+      '## RISKS' '- stale evidence -> recompute the fingerprint' \
+      '## FIRST MOVE' 'Verify the accepted evidence.' \
+      '## CONFIDENCE' 'High' > "$out"
+    ;;
+  gpt-5.6-sol:*PLAN_CONTRACT*)
+    printf '%s\n' \
+      '## DECISION' 'Use one bounded slice.' \
+      '## INVARIANTS' '- Preserve unrelated work.' \
+      '## SLICES' '1. Slice' '   - Owned paths: allowed.txt' '   - Test-first signal: focused test' '   - Done when: test passes' '   - Rollback: revert the slice' \
+      '## DEPENDENCIES' 'None.' \
+      '## VERIFICATION MATRIX' '- behavior -> focused test' \
+      '## STOP CONDITIONS' '- Scope expansion.' \
+      '## CONFIDENCE' 'High' > "$out"
+    ;;
+  gpt-5.6-luna:*)
+    printf '%s\n' \
+      '## STATE FINGERPRINT' "HEAD $expected_head; diff $expected_diff" \
+      '## FINDINGS' '- E1 [observed]: fixture exists - app.txt:1' \
+      '## FLOW' 'app.txt is the fixture root.' \
+      '## CONTRADICTIONS' 'None.' \
+      '## UNKNOWNS' 'None.' \
+      '## RECOMMENDED NEXT READS' 'None.' > "$out"
+    ;;
+  gpt-5.6-terra:*)
+    printf '%s\n' \
+      '## SLICE' 'No-op complete.' \
+      '## TEST-FIRST SIGNAL' 'fixture check -> gap observed' \
+      '## CHANGES' '- allowed.txt - no production change required' \
+      '## VERIFICATION' '- fixture check -> passed' \
+      '## DEVIATIONS' 'None.' \
+      '## RISKS AND UNKNOWNS' 'None.' \
+      '## DECISION' 'complete' > "$out"
+    ;;
+  *)
+    printf 'unexpected model or prompt\n' > "$out"
+    exit 2
+    ;;
+esac

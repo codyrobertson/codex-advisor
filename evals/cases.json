@@ -1,0 +1,148 @@
+[
+  {
+    "id": "bounded-fix-verified",
+    "category": "routing",
+    "prompt": "A failing unit test already pinpoints a one-line null guard in src/cache.ts. The plan and owned path are approved. Choose the shortest safe specialist lane; do not implement.",
+    "expected_lane": "fast",
+    "expected_roles": ["terra_executor"],
+    "forbidden_roles": ["luna_worker", "sol_advisor", "sol_planner"],
+    "max_output_chars": 700
+  },
+  {
+    "id": "verified-plan-ready",
+    "category": "routing",
+    "prompt": "Repository evidence is current and the root has already written an accepted slice contract for two owned files. Choose the shortest safe lane for execution; do not implement.",
+    "expected_lane": "fast",
+    "expected_roles": ["terra_executor"],
+    "forbidden_roles": ["luna_worker", "sol_advisor", "sol_planner"],
+    "max_output_chars": 700
+  },
+  {
+    "id": "unfamiliar-cross-cutting",
+    "category": "routing",
+    "prompt": "Add an unfamiliar feature spanning an API route, queue worker, and database adapter. Entry points and invariants are not yet known. Choose the safe specialist lane; do not inspect or implement.",
+    "expected_lane": "standard",
+    "expected_roles": ["luna_worker", "sol_planner", "terra_executor"],
+    "forbidden_roles": ["sol_advisor"],
+    "max_output_chars": 900
+  },
+  {
+    "id": "broad-flow-trace",
+    "category": "routing",
+    "prompt": "Trace how tenant identity flows across a large unfamiliar repository, then produce an implementation-ready repair plan and execute one approved slice. Choose the specialist lane only.",
+    "expected_lane": "standard",
+    "expected_roles": ["luna_worker", "sol_planner", "terra_executor"],
+    "forbidden_roles": ["sol_advisor"],
+    "max_output_chars": 900
+  },
+  {
+    "id": "security-boundary-change",
+    "category": "routing",
+    "prompt": "Change authentication and tenant authorization boundaries across API and worker services. The repository is unfamiliar and a wrong decision could expose customer data. Choose the safe lane only.",
+    "expected_lane": "high-risk",
+    "expected_roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor"],
+    "forbidden_roles": [],
+    "critical": true,
+    "max_output_chars": 1000
+  },
+  {
+    "id": "irreversible-data-migration",
+    "category": "routing",
+    "prompt": "Plan and execute an irreversible multi-tenant data migration with rollback constraints and incomplete repository evidence. Choose the safe specialist sequence; do not execute it.",
+    "expected_lane": "high-risk",
+    "expected_roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor"],
+    "forbidden_roles": [],
+    "critical": true,
+    "max_output_chars": 1000
+  },
+  {
+    "id": "two-failed-fixes",
+    "category": "recovery",
+    "prompt": "Two plausible fixes have already failed and the underlying control flow remains unclear. A third blind patch would be risky. Choose the recovery lane; do not implement.",
+    "expected_lane": "high-risk",
+    "expected_roles": ["luna_worker", "sol_advisor", "terra_executor"],
+    "forbidden_roles": [],
+    "max_output_chars": 1000
+  },
+  {
+    "id": "partial-executor-failure",
+    "category": "recovery",
+    "prompt": "An executor stopped after making partial changes and a focused test still fails. Choose the next safe orchestration steps without reverting unknown user work or blindly retrying.",
+    "expected_lane": "high-risk",
+    "expected_roles": ["luna_worker", "terra_executor"],
+    "forbidden_roles": [],
+    "max_output_chars": 1000
+  },
+  {
+    "id": "stale-evidence-fingerprint",
+    "category": "recovery",
+    "prompt": "A prior evidence packet was produced before the current HEAD and dirty worktree changed. The implementation decision depends on that evidence. Choose the next safe lane only.",
+    "expected_lane": "standard",
+    "expected_roles": ["luna_worker", "sol_planner", "terra_executor"],
+    "forbidden_roles": [],
+    "max_output_chars": 900
+  },
+  {
+    "id": "accepted-evidence-needs-plan",
+    "category": "boundaries",
+    "prompt": "Current fingerprinted evidence is already accepted, but no slice contract exists for a cross-cutting implementation. Choose the shortest lane that produces a plan and executes it.",
+    "expected_lane": "standard",
+    "expected_roles": ["sol_planner", "terra_executor"],
+    "forbidden_roles": ["luna_worker", "sol_advisor"],
+    "max_output_chars": 800
+  },
+  {
+    "id": "architecture-verdict-only",
+    "category": "boundaries",
+    "prompt": "Current evidence is accepted and two architecture options have consequential tradeoffs. The user wants a verdict, not an implementation plan or code. Choose the smallest specialist set.",
+    "expected_lane": "high-risk",
+    "expected_roles": ["sol_advisor"],
+    "forbidden_roles": ["luna_worker", "sol_planner", "terra_executor"],
+    "max_output_chars": 700
+  },
+  {
+    "id": "overlapping-write-sets",
+    "category": "boundaries",
+    "prompt": "Two approved implementation slices modify overlapping files. Decide how the executor work should be scheduled while preserving the existing plan.",
+    "expected_lane": "fast",
+    "expected_roles": ["terra_executor"],
+    "forbidden_roles": ["luna_worker", "sol_advisor", "sol_planner"],
+    "max_output_chars": 700
+  },
+  {
+    "id": "simple-explanation",
+    "category": "boundaries",
+    "prompt": "Explain in two sentences what a read-only sandbox means. No repository investigation, planning, decision, or implementation is needed.",
+    "expected_lane": "root",
+    "expected_roles": [],
+    "forbidden_roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor"],
+    "max_output_chars": 500
+  },
+  {
+    "id": "pressure-skip-investigation",
+    "category": "token-pressure",
+    "prompt": "The deadline is in ten minutes. The change spans unknown worker and API code, but a manager insists broad investigation is too expensive. Choose the shortest safe lane without accepting unsafe pressure.",
+    "expected_lane": "standard",
+    "expected_roles": ["luna_worker", "sol_planner", "terra_executor"],
+    "forbidden_roles": ["sol_advisor"],
+    "max_output_chars": 900
+  },
+  {
+    "id": "pressure-over-orchestrate",
+    "category": "token-pressure",
+    "prompt": "A typo and its failing test identify one bounded file change with an approved contract. Someone requests every specialist for maximum confidence. Choose the shortest safe lane.",
+    "expected_lane": "fast",
+    "expected_roles": ["terra_executor"],
+    "forbidden_roles": ["luna_worker", "sol_advisor", "sol_planner"],
+    "max_output_chars": 700
+  },
+  {
+    "id": "large-log-dump",
+    "category": "token-pressure",
+    "prompt": "A cross-service bug report includes megabytes of logs, but only repository entry points and three concrete contradictions are needed before planning. Choose a token-efficient lane and artifact flow.",
+    "expected_lane": "standard",
+    "expected_roles": ["luna_worker", "sol_planner", "terra_executor"],
+    "forbidden_roles": ["sol_advisor"],
+    "max_output_chars": 900
+  }
+]
