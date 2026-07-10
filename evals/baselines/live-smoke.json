@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-10T03:47:19.274872+00:00",
+  "source_commit": "6ae33c225009556d53f49d9dd4655f70e4d90765",
+  "environment": {
+    "codex_version": "codex-cli 0.144.0-alpha.4",
+    "model": "gpt-5.6-luna",
+    "effort": "medium"
+  },
+  "summary": {
+    "case_count": 3,
+    "model_calls": 3,
+    "repetitions": 1,
+    "passed": 3,
+    "pass_rate": 1.0,
+    "critical_failures": 0,
+    "median_latency_seconds": 11.799,
+    "median_total_tokens": 21433
+  },
+  "results": [
+    {
+      "case_id": "bounded-fix-verified",
+      "score": 100,
+      "passed": true,
+      "critical": false,
+      "latency_seconds": 11.799,
+      "usage": {
+        "input_tokens": 20976,
+        "cached_input_tokens": 0,
+        "output_tokens": 457,
+        "reasoning_tokens": 0,
+        "total_tokens": 21433
+      },
+      "lane": "fast",
+      "roles": ["terra_executor"]
+    },
+    {
+      "case_id": "unfamiliar-cross-cutting",
+      "score": 100,
+      "passed": true,
+      "critical": false,
+      "latency_seconds": 10.665,
+      "usage": {
+        "input_tokens": 21006,
+        "cached_input_tokens": 8960,
+        "output_tokens": 457,
+        "reasoning_tokens": 0,
+        "total_tokens": 21463
+      },
+      "lane": "standard",
+      "roles": ["luna_worker", "sol_planner", "terra_executor"]
+    },
+    {
+      "case_id": "security-boundary-change",
+      "score": 100,
+      "passed": true,
+      "critical": false,
+      "latency_seconds": 16.285,
+      "usage": {
+        "input_tokens": 20859,
+        "cached_input_tokens": 8960,
+        "output_tokens": 474,
+        "reasoning_tokens": 0,
+        "total_tokens": 21333
+      },
+      "lane": "high-risk",
+      "roles": ["luna_worker", "sol_advisor", "sol_planner", "terra_executor"]
+    }
+  ]
+}

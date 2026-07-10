@@ -26,6 +26,7 @@ class RepositoryShapeTests(unittest.TestCase):
             ROOT / "evals" / "cases.json",
             ROOT / "evals" / "evaluate.py",
             ROOT / "evals" / "fake-bin" / "codex",
+            ROOT / "evals" / "baselines" / "live-smoke.json",
             SKILL / "SKILL.md",
             SKILL / "scripts" / "run-role.sh",
             SKILL / "scripts" / "worktree-state.py",
@@ -75,6 +76,20 @@ class RepositoryShapeTests(unittest.TestCase):
             self.assertIsInstance(case["forbidden_roles"], list)
             self.assertGreaterEqual(len(case["prompt"]), 40)
             self.assertGreater(case["max_output_chars"], 0)
+
+    def test_checked_in_live_smoke_is_sanitized_and_passing(self) -> None:
+        baseline = json.loads((ROOT / "evals" / "baselines" / "live-smoke.json").read_text())
+        self.assertEqual(1.0, baseline["summary"]["pass_rate"])
+        self.assertEqual(3, baseline["summary"]["model_calls"])
+        self.assertRegex(baseline["source_commit"], r"\A[0-9a-f]{40}\Z")
+        self.assertEqual(
+            {"bounded-fix-verified", "unfamiliar-cross-cutting", "security-boundary-change"},
+            {result["case_id"] for result in baseline["results"]},
+        )
+        self.assertTrue(all(result["passed"] and result["score"] == 100 for result in baseline["results"]))
+        serialized = json.dumps(baseline)
+        self.assertNotIn("nonce", serialized)
+        self.assertNotIn("stderr", serialized)
 
 
 class RunnerContractTests(unittest.TestCase):

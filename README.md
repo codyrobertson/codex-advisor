@@ -49,6 +49,8 @@ python3 evals/evaluate.py live --repetitions 3 --output evals/results/live.json
 
 Public cases are regression tests, not a hidden benchmark. Maintain separate paraphrased/held-out cases for claims about generalization.
 
+The checked-in [live smoke baseline](evals/baselines/live-smoke.json) records a real three-case run on `gpt-5.6-luna` medium: 3/3 exact routes, 11.8s median latency, and 21,433 median total tokens. Treat it as a reproducible smoke baseline, not a general model-quality claim.
+
 ## Safety and privacy
 
 - Use only trusted repositories and briefs. Repository text can contain prompt injection.
